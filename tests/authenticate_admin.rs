@@ -1,20 +1,22 @@
 use httpmock::prelude::*;
-use pocketbase_sdk::admin::Admin;
+use pocketbase_client::admin::Admin;
 use serde_json::json;
 
-#[test]
-pub fn authenticate_admin_success() {
+#[tokio::test]
+pub async fn authenticate_admin_success() {
     let mockserver = mock_admin_login();
     let client = Admin::new(mockserver.base_url().as_str())
-        .auth_with_password("sreedev@icloud.com", "Sreedev123");
+        .auth_with_password("", "")
+        .await;
     assert!(client.is_ok());
 }
 
-#[test]
-pub fn authenticate_admin_failure() {
+#[tokio::test]
+pub async fn authenticate_admin_failure() {
     let mockserver = mock_admin_login();
     let client = Admin::new(mockserver.base_url().as_str())
-        .auth_with_password("wrongidentity@wrongidentity.com", "wrongpassword");
+        .auth_with_password("wrongidentity@wrongidentity.com", "wrongpassword")
+        .await;
     assert!(client.is_err());
 }
 
@@ -44,8 +46,8 @@ fn mock_admin_login() -> MockServer {
         when
             .method(POST)
             .json_body(json!({
-                "identity": "sreedev@icloud.com",
-                "password": "Sreedev123"
+                "identity": "",
+                "password": ""
             }))
             .path("/api/admins/auth-with-password");
 

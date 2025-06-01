@@ -1,52 +1,67 @@
-use ureq::{Request, Response};
-
-use crate::client::Client;
+use crate::client::Client as UserClient;
 use anyhow::Result;
+use reqwest::{Client as ReqwestClient, Response};
 
 pub struct Httpc;
 
 impl Httpc {
-    fn attach_auth_info<T>(partial_request: Request, client: &Client<T>) -> Result<Request> {
-        match client.auth_token.as_ref() {
-            Some(token) => Ok(partial_request.set("Authorization", token)),
-            None => Ok(partial_request),
+    fn attach_auth_info<T>(
+        builder: reqwest::RequestBuilder,
+        client: &UserClient<T>,
+    ) -> reqwest::RequestBuilder {
+        if let Some(token) = client.auth_token.as_ref() {
+            builder.header("Authorization", token.as_str())
+        } else {
+            builder
         }
     }
 
-    pub fn get<T>(
-        client: &Client<T>,
+    pub async fn get<T>(
+        client: &UserClient<T>,
         url: &str,
         query_params: Option<Vec<(&str, &str)>>,
     ) -> Result<Response> {
-        Ok(ureq::get(url))
-            .and_then(|request| Self::attach_auth_info(request, client))
-            .map(|request| {
-                if let Some(pairs) = query_params {
-                    request.query_pairs(pairs)
-                } else {
-                    request
-                }
-            })
-            .and_then(|request| Ok(request.call()?))
+        let http = ReqwestClient::new();
+        let mut request = http.get(url);
+        request = Self::attach_auth_info(request, client);
+
+        if let Some(pairs) = query_params {
+            request = request.query(&pairs);
+        }
+
+        let resp = request.send().await?;
+        Ok(resp)
     }
 
-    pub fn post<T>(client: &Client<T>, url: &str, body_content: String) -> Result<Response> {
-        Ok(ureq::post(url))
-            .map(|request| request.set("Content-Type", "application/json"))
-            .and_then(|request| Self::attach_auth_info(request, client))
-            .and_then(|request| Ok(request.send_string(body_content.as_str())?))
+    pub async fn post<T>(
+        client: &UserClient<T>,
+        url: &str,
+        body_content: String,
+    ) -> Result<Response> {
+        let http = ReqwestClient::new();
+        let mut request = http.post(url).header("Content-Type", "application/json");
+        request = Self::attach_auth_info(request, client);
+        let resp = request.body(body_content).send().await?;
+        Ok(resp)
     }
 
-    pub fn delete<T>(client: &Client<T>, url: &str) -> Result<Response> {
-        Ok(ureq::delete(url))
-            .and_then(|request| Self::attach_auth_info(request, client))
-            .and_then(|request| Ok(request.call()?))
+    pub async fn delete<T>(client: &UserClient<T>, url: &str) -> Result<Response> {
+        let http = ReqwestClient::new();
+        let request = http.delete(url);
+        let request = Self::attach_auth_info(request, client);
+        let resp = request.send().await?;
+        Ok(resp)
     }
 
-    pub fn patch<T>(client: &Client<T>, url: &str, body_content: String) -> Result<Response> {
-        Ok(ureq::patch(url))
-            .map(|request| request.set("Content-Type", "application/json"))
-            .and_then(|request| Self::attach_auth_info(request, client))
-            .and_then(|request| Ok(request.send_string(body_content.as_str())?))
+    pub async fn patch<T>(
+        client: &UserClient<T>,
+        url: &str,
+        body_content: String,
+    ) -> Result<Response> {
+        let http = ReqwestClient::new();
+        let mut request = http.patch(url).header("Content-Type", "application/json");
+        request = Self::attach_auth_info(request, client);
+        let resp = request.body(body_content).send().await?;
+        Ok(resp)
     }
 }

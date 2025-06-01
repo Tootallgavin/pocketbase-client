@@ -10,14 +10,14 @@ Version 0.1.1 of pocketbase SDK is complete reimplementation and is not compatib
 # Installation
 
 ```bash
-  $ cargo add pocketbase-sdk
+  $ cargo add pocketbase-client
   $ cargo add serde
 ```
 or add the following to your `Cargo.toml`
 
 ```toml
 [dependencies]
-pocketbase-sdk = "0.1.1"
+pocketbase-client = "0.1.0"
 serde = { version = "1.0.145", features = ["derive"] }
 ```
 
@@ -25,7 +25,7 @@ serde = { version = "1.0.145", features = ["derive"] }
 
 ```rust
 use anyhow::Result;
-use pocketbase_sdk::admin::Admin;
+use pocketbase_client::admin::Admin;
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -59,7 +59,7 @@ fn main() -> Result<()> {
 ### Records
 ```rust
 use anyhow::Result;
-use pocketbase_sdk::client::Client;
+use pocketbase_client::client::Client;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Default)]
@@ -136,7 +136,7 @@ fn main() -> Result<()> {
 
 ```rust
 use anyhow::Result;
-use pocketbase_sdk::admin::Admin;
+use pocketbase_client::admin::Admin;
 
 fn main() -> Result<()> {
     env_logger::init();
@@ -166,7 +166,7 @@ fn main() -> Result<()> {
 
 ```rust
 use anyhow::Result;
-use pocketbase_sdk::client::Client;
+use pocketbase_client::client::Client;
 
 fn main() -> Result<()> {
     let client = Client::new("http://localhost:8090");

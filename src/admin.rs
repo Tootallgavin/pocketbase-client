@@ -15,16 +15,16 @@ struct AuthSuccessResponse {
 }
 
 impl<'a> Admin<'a> {
-    pub fn auth_with_password(&self, identifier: &str, secret: &str) -> Result<Client<Auth>> {
+    pub async fn auth_with_password(&self, identifier: &str, secret: &str) -> Result<Client<Auth>> {
         let url = format!("{}/api/admins/auth-with-password", self.base_url);
         let credentials = json!({
             "identity": identifier,
             "password": secret,
         });
         let client = Client::new(self.base_url);
-        match Httpc::post(&client, &url, credentials.to_string()) {
+        match Httpc::post(&client, &url, credentials.to_string()).await {
             Ok(response) => {
-                let raw_response = response.into_json::<AuthSuccessResponse>();
+                let raw_response = response.json::<AuthSuccessResponse>().await;
                 match raw_response {
                     Ok(AuthSuccessResponse { token }) => Ok(Client {
                         base_url: self.base_url.to_string(),

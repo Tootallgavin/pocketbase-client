@@ -1,29 +1,36 @@
 [package]
-name        = "pocketbase-sdk"
-version     = "0.1.1"
+name        = "pocketbase-client"
+version     = "0.1.0"
 edition     = "2021"
-authors     = ["Sreedev Kodichath <sreedev@icloud.com>", "CubeCoder <markus.hamacher16@gmail.com>"]
+authors     = ["Gavin Stringfellow <StringfellowGavin@gmail.com>"]
 license     = "MIT"
-description = "Pocketbase SDK"
+description = "Pocketbase Client"
 readme      = "README.md"
-homepage    = "https://github.com/sreedevk/pocketbase-sdk-rust"
-categories  = ["development-tools"]
+homepage    = "https://github.com/Tootallgavin/pocketbase-client"
+categories = ["network-programming", "web-programming::http-client", "web-programming::http-server"]
 keywords    = [
   "pocketbase",
+  "pocketbase-client",
   "pocketbase-sdk",
   "rust-pocketbase",
   "pocketbase-rs"
 ]
 
 [dependencies]
-anyhow = "1.0.70"
-chrono = { version = "0.4.24", features = ["serde"] }
-env_logger = "0.10.0"
-log = "0.4.17"
-serde = { version = "1.0.145", features = ["derive"] }
-serde_json = "1.0.85"
-ureq = { version = "2.6.2", features = ["json", "charset"] }
-url = "2.3.1"
+anyhow = "1.0.98"
+chrono = { version = "0.4.40", features = ["serde"] }
+env_logger = "0.11.8"
+log = "0.4.27"
+serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0.140"
+url = "2.5.4"
+reqwest = { version = "0.12.15", features = ["json"] }
+thiserror = "2"
+tokio = { version = "1", features = ["full"], optional = true }
 
 [dev-dependencies]
-httpmock = "0.6"
+httpmock = "0.7.0"
+
+[features]
+default = []
+bin = ["tokio"]

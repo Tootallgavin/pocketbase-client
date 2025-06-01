@@ -1,17 +1,17 @@
-use crate::client::{Auth, Client};
+use crate::client::{Client};
 use crate::httpc::Httpc;
 use anyhow::Result;
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use std::collections::HashMap;
-use chrono::{DateTime, Utc};
 
-pub struct LogsManager<'a> {
-    pub client: &'a Client<Auth>,
+pub struct LogsManager<'a, A> {
+    pub client: &'a Client<A>,
 }
 
 #[derive(Debug, Clone)]
-pub struct LogListRequestBuilder<'a> {
-    pub client: &'a Client<Auth>,
+pub struct LogListRequestBuilder<'a, A> {
+    pub client: &'a Client<A>,
     pub page: i32,
     pub per_page: i32,
     pub sort: Option<&'a str>,
@@ -19,14 +19,14 @@ pub struct LogListRequestBuilder<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub struct LogViewRequestBuilder<'a> {
-    pub client: &'a Client<Auth>,
+pub struct LogViewRequestBuilder<'a, A> {
+    pub client: &'a Client<A>,
     pub id: &'a str,
 }
 
 #[derive(Debug, Clone)]
-pub struct LogStatisticsRequestBuilder<'a> {
-    pub client: &'a Client<Auth>,
+pub struct LogStatisticsRequestBuilder<'a, A> {
+    pub client: &'a Client<A>,
     pub filter: Option<&'a str>,
 }
 
@@ -60,7 +60,7 @@ pub struct LogStatDataPoint {
     pub date: String,
 }
 
-impl<'a> LogStatisticsRequestBuilder<'a> {
+impl<'a, A: Clone> LogStatisticsRequestBuilder<'a, A> {
     pub fn filter(&self, filter_query: &'a str) -> Self {
         Self {
             filter: Some(filter_query),
@@ -68,16 +68,16 @@ impl<'a> LogStatisticsRequestBuilder<'a> {
         }
     }
 
-    pub fn call(&self) -> Result<Vec<LogStatDataPoint>> {
+    pub async fn call(&self) -> Result<Vec<LogStatDataPoint>> {
         let url = format!("{}/api/logs/requests/stats", self.client.base_url);
         let mut build_opts = Vec::new();
         if let Some(filter_opts) = &self.filter {
             build_opts.push(("filter", filter_opts.to_owned()));
         }
 
-        match Httpc::get(self.client, &url, Some(build_opts)) {
+        match Httpc::get(self.client, &url, Some(build_opts)).await {
             Ok(result) => {
-                let response = result.into_json::<Vec<LogStatDataPoint>>()?;
+                let response = result.json::<Vec<LogStatDataPoint>>().await?;
                 Ok(response)
             }
             Err(e) => Err(e),
@@ -85,12 +85,12 @@ impl<'a> LogStatisticsRequestBuilder<'a> {
     }
 }
 
-impl<'a> LogViewRequestBuilder<'a> {
-    pub fn call(&self) -> Result<LogListItem> {
+impl<'a, A> LogViewRequestBuilder<'a, A> {
+    pub async fn call(&self) -> Result<LogListItem> {
         let url = format!("{}/api/logs/requests/{}", self.client.base_url, self.id);
-        match Httpc::get(self.client, &url, None) {
+        match Httpc::get(self.client, &url, None).await {
             Ok(result) => {
-                let response = result.into_json::<LogListItem>()?;
+                let response = result.json::<LogListItem>().await?;
                 Ok(response)
             }
             Err(e) => Err(e),
@@ -98,7 +98,7 @@ impl<'a> LogViewRequestBuilder<'a> {
     }
 }
 
-impl<'a> LogListRequestBuilder<'a> {
+impl<'a, A: Clone> LogListRequestBuilder<'a, A> {
     pub fn page(&self, page_count: i32) -> Self {
         LogListRequestBuilder {
             page: page_count,
@@ -127,20 +127,24 @@ impl<'a> LogListRequestBuilder<'a> {
         }
     }
 
-    pub fn call(&self) -> Result<LogList> {
+    pub async fn call(&self) -> Result<LogList> {
         let url = format!("{}/api/logs/requests", self.client.base_url);
         let mut build_opts = Vec::new();
 
-        if let Some(sort_opts) = &self.sort { build_opts.push(("sort", sort_opts.to_owned())) }
-        if let Some(filter_opts) = &self.filter { build_opts.push(("filter", filter_opts.to_owned())) }
+        if let Some(sort_opts) = &self.sort {
+            build_opts.push(("sort", sort_opts.to_owned()))
+        }
+        if let Some(filter_opts) = &self.filter {
+            build_opts.push(("filter", filter_opts.to_owned()))
+        }
         let per_page_opts = self.per_page.to_string();
         let page_opts = self.page.to_string();
         build_opts.push(("per_page", per_page_opts.as_str()));
         build_opts.push(("page", page_opts.as_str()));
 
-        match Httpc::get(self.client, &url, Some(build_opts)) {
+        match Httpc::get(self.client, &url, Some(build_opts)).await {
             Ok(result) => {
-                let response = result.into_json::<LogList>()?;
+                let response = result.json::<LogList>().await?;
                 Ok(response)
             }
             Err(e) => Err(e),
@@ -148,8 +152,8 @@ impl<'a> LogListRequestBuilder<'a> {
     }
 }
 
-impl<'a> LogsManager<'a> {
-    pub fn list(&self) -> LogListRequestBuilder<'a> {
+impl<'a, A: Clone> LogsManager<'a, A> {
+    pub fn list(&self) -> LogListRequestBuilder<'a, A> {
         LogListRequestBuilder {
             client: self.client,
             page: 1,
@@ -159,14 +163,17 @@ impl<'a> LogsManager<'a> {
         }
     }
 
-    pub fn view(&self, id: &'a str) -> LogViewRequestBuilder<'a> {
+    pub fn view(&self, id: &'a str) -> LogViewRequestBuilder<'a, A> {
         LogViewRequestBuilder {
             client: self.client,
             id,
         }
     }
 
-    pub fn statistics(&self) -> LogStatisticsRequestBuilder<'a> {
-        LogStatisticsRequestBuilder { client: self.client, filter: None } 
+    pub fn statistics(&self) -> LogStatisticsRequestBuilder<'a, A> {
+        LogStatisticsRequestBuilder {
+            client: self.client,
+            filter: None,
+        }
     }
 }

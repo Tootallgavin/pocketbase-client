@@ -1,6 +1,6 @@
 use httpmock::prelude::*;
-use pocketbase_sdk::client::Client;
-use serde::{Serialize, Deserialize};
+use pocketbase_client::client::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 
 #[derive(Clone, Debug, Serialize, Default, Deserialize)]
@@ -9,16 +9,20 @@ pub struct Record {
     pub title: String,
 }
 
-#[test]
-fn list_records_success() {
+#[tokio::test]
+async fn list_records_success() {
     let mockserver = mock_records_server();
-    let client = Client::new(mockserver.base_url().as_str()).auth_with_password(
-        "users",
-        "sreedev@icloud.com",
-        "Sreedev123",
-    ).unwrap();
+    let client = Client::new(mockserver.base_url().as_str())
+        .auth_with_password("users", "", "")
+        .await
+        .unwrap();
 
-    let records = client.records("posts").list().per_page(1010).call::<Record>();
+    let records = client
+        .records("posts")
+        .list()
+        .per_page(1010)
+        .call::<Record>()
+        .await;
     assert!(records.is_ok());
 }
 
@@ -60,8 +64,8 @@ fn mock_records_server() -> MockServer {
         when
             .method(POST)
             .json_body(json!({
-                "identity": "sreedev@icloud.com",
-                "password": "Sreedev123"
+                "identity": "",
+                "password": ""
             }))
             .path("/api/collections/users/auth-with-password");
 

@@ -1,12 +1,14 @@
 use anyhow::Result;
-use pocketbase_sdk::admin::Admin;
+use pocketbase_client::admin::Admin;
 
-fn main() -> Result<()> {
+#[tokio::main]
+async fn main() -> Result<()> {
     env_logger::init();
 
     // admin authentication
     let authenticated_admin_client = Admin::new("http://localhost:8090")
-        .auth_with_password("sreedev@icloud.com", "Sreedev123")?;
+        .auth_with_password("", "")
+        .await?;
 
     // collections list + Filter
     let collections = authenticated_admin_client
@@ -15,7 +17,8 @@ fn main() -> Result<()> {
         .page(1)
         .filter("name = 'employees'".to_string())
         .per_page(100)
-        .call()?;
+        .call()
+        .await?;
 
     dbg!(collections);
 
@@ -23,7 +26,8 @@ fn main() -> Result<()> {
     let user_collection = authenticated_admin_client
         .collections()
         .view("users")
-        .call()?;
+        .call()
+        .await?;
 
     dbg!(user_collection);
 

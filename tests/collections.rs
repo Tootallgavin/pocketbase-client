@@ -1,32 +1,34 @@
 use httpmock::prelude::*;
-use pocketbase_sdk::admin::Admin;
+use pocketbase_client::admin::Admin;
 use serde_json::json;
 
-#[test]
-fn collections_list_success() {
+#[tokio::test]
+async fn collections_list_success() {
     let mockserver_url = mockserver().base_url();
     let admin_client = Admin::new(mockserver_url.as_str())
-        .auth_with_password("sreedev@icloud.com", "Sreedev123")
+        .auth_with_password("", "")
+        .await
         .unwrap();
 
-    let collections_list = admin_client.collections().list().call();
+    let collections_list = admin_client.collections().list().call().await;
     assert!(collections_list.is_ok())
 }
 
-#[test]
-fn colletion_view_succes() {
+#[tokio::test]
+async fn colletion_view_succes() {
     let mockserver_url = mockserver().base_url();
     let admin_client = Admin::new(mockserver_url.as_str())
-        .auth_with_password("sreedev@icloud.com", "Sreedev123")
+        .auth_with_password("", "")
+        .await
         .unwrap();
-    let collection = admin_client.collections().view("posts").call();
+    let collection = admin_client.collections().view("posts").call().await;
     assert!(collection.is_ok())
 }
 
 fn mockserver() -> MockServer {
     let server = MockServer::start();
     server.mock(|when, then| {
-        when.method(GET)  
+        when.method(GET)
         .path("/api/collections/posts")
             .header("Authorization", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6InN5d2JoZWNuaDQ2cmhtMCIsInR5cGUiOiJhZG1pbiIsImV4cCI6MjIwODk4MTYwMH0.han3_sG65zLddpcX2ic78qgy7FKecuPfOpFa8Dvi5Bg");
             then.status(200).header("content-type", "application/json")
@@ -160,8 +162,8 @@ fn mockserver() -> MockServer {
         when
             .method(POST)
             .json_body(json!({
-                "identity": "sreedev@icloud.com",
-                "password": "Sreedev123"
+                "identity": "",
+                "password": ""
             }))
             .path("/api/admins/auth-with-password");
 
