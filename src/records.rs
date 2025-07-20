@@ -260,4 +260,34 @@ impl<'a, A> RecordsManager<'a, A> {
             per_page: 100,
         }
     }
+
+    pub async fn get_all<T>(&self) -> Result<Vec<T>>
+    where
+        A: Clone,
+        T: Default + DeserializeOwned,
+    {
+        let mut all_items = Vec::new();
+        let mut page = 1;
+        let per_page = 1000;
+
+        loop {
+            let page_resp = self
+                .list()
+                .page(page)
+                .per_page(per_page)
+                .call::<T>()
+                .await?;
+
+            all_items.extend(page_resp.items.into_iter());
+
+            let fetched_so_far = (page * per_page) as i32;
+            if fetched_so_far >= page_resp.total_items {
+                break;
+            }
+
+            page += 1;
+        }
+
+        Ok(all_items)
+    }
 }
