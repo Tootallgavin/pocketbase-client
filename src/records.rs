@@ -49,7 +49,7 @@ impl<'a, A: Clone> RecordsListRequestBuilder<'a, A> {
         }
         let per_page_opts = self.per_page.to_string();
         let page_opts = self.page.to_string();
-        build_opts.push(("per_page", per_page_opts.as_str()));
+        build_opts.push(("perPage", per_page_opts.as_str()));
         build_opts.push(("page", page_opts.as_str()));
 
         match Httpc::get(self.client, &url, Some(build_opts)).await {
@@ -280,8 +280,7 @@ impl<'a, A> RecordsManager<'a, A> {
 
             all_items.extend(page_resp.items.into_iter());
 
-            let fetched_so_far = (page * per_page) as i32;
-            if fetched_so_far >= page_resp.total_items {
+            if all_items.len() == page_resp.total_items as usize {
                 break;
             }
 
