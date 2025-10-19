@@ -20,3 +20,4 @@ pub mod settings;
 pub mod rts;
 
 mod httpc;
+mod error;
