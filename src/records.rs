@@ -184,6 +184,7 @@ pub struct RecordViewRequestBuilder<'a, A> {
     pub client: &'a Client<A>,
     pub collection_name: &'a str,
     pub identifier: &'a str,
+    pub expand: Option<String>,
 }
 
 impl<'a, A> RecordViewRequestBuilder<'a, A> {
@@ -192,7 +193,12 @@ impl<'a, A> RecordViewRequestBuilder<'a, A> {
             "{}/api/collections/{}/records/{}",
             self.client.base_url, self.collection_name, self.identifier
         );
-        let resp = Httpc::get(self.client, &url, None)
+        let mut build_opts: Vec<(&str, &str)> = vec![];
+        if let Some(expand_opts) = &self.expand {
+            build_opts.push(("expand", expand_opts))
+        }
+        
+        let resp = Httpc::get(self.client, &url, Some(build_opts))
             .await
             .with_context(|| format!("GET {} failed to execute", url))?;
 
@@ -235,6 +241,13 @@ impl<'a, A> RecordViewRequestBuilder<'a, A> {
                     body_snippet: snippet.to_string(),
                 })
             }
+        }
+    }
+
+    pub fn expand(&self, expand_opts: &str) -> Self {
+        Self {
+            expand: Some(expand_opts.to_string()),
+            ..*self
         }
     }
 }
@@ -337,6 +350,7 @@ impl<'a, A> RecordsManager<'a, A> {
             identifier,
             client: self.client,
             collection_name: self.name,
+            expand: None,
         }
     }
 
